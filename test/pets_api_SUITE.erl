@@ -69,8 +69,13 @@ list_empty(_Config) ->
     ?assertMatch(#{<<"data">> := []}, Body).
 
 create_pet(_Config) ->
-    Params = #{<<"name">> => <<"Luna">>, <<"species">> => <<"cat">>,
-               <<"breed">> => <<"Siamese">>, <<"age">> => 3, <<"weight">> => 4.5},
+    Params = #{
+        <<"name">> => <<"Luna">>,
+        <<"species">> => <<"cat">>,
+        <<"breed">> => <<"Siamese">>,
+        <<"age">> => 3,
+        <<"weight">> => 4.5
+    },
     {201, Body} = post("/api/pets", Params),
     Pet = maps:get(<<"data">>, Body),
     ?assertEqual(<<"Luna">>, maps:get(<<"name">>, Pet)),
@@ -103,7 +108,9 @@ show_pet_not_found(_Config) ->
 update_pet(_Config) ->
     {201, Created} = post("/api/pets", #{<<"name">> => <<"Buddy">>, <<"species">> => <<"dog">>}),
     Id = maps:get(<<"id">>, maps:get(<<"data">>, Created)),
-    {200, Body} = put("/api/pets/" ++ integer_to_list(Id), #{<<"name">> => <<"Buddy Updated">>, <<"age">> => 5}),
+    {200, Body} = put("/api/pets/" ++ integer_to_list(Id), #{
+        <<"name">> => <<"Buddy Updated">>, <<"age">> => 5
+    }),
     Pet = maps:get(<<"data">>, Body),
     ?assertEqual(<<"Buddy Updated">>, maps:get(<<"name">>, Pet)),
     ?assertEqual(5, maps:get(<<"age">>, Pet)),
@@ -125,8 +132,13 @@ delete_pet_not_found(_Config) ->
 
 full_crud_lifecycle(_Config) ->
     %% Create
-    {201, C1} = post("/api/pets", #{<<"name">> => <<"Milo">>, <<"species">> => <<"cat">>,
-                                     <<"breed">> => <<"Tabby">>, <<"age">> => 2, <<"weight">> => 3.8}),
+    {201, C1} = post("/api/pets", #{
+        <<"name">> => <<"Milo">>,
+        <<"species">> => <<"cat">>,
+        <<"breed">> => <<"Tabby">>,
+        <<"age">> => 2,
+        <<"weight">> => 3.8
+    }),
     Id = maps:get(<<"id">>, maps:get(<<"data">>, C1)),
 
     %% List contains the pet
@@ -138,7 +150,9 @@ full_crud_lifecycle(_Config) ->
     ?assertEqual(<<"Milo">>, maps:get(<<"name">>, maps:get(<<"data">>, S1))),
 
     %% Update
-    {200, U1} = put("/api/pets/" ++ integer_to_list(Id), #{<<"name">> => <<"Milo Senior">>, <<"age">> => 10}),
+    {200, U1} = put("/api/pets/" ++ integer_to_list(Id), #{
+        <<"name">> => <<"Milo Senior">>, <<"age">> => 10
+    }),
     ?assertEqual(<<"Milo Senior">>, maps:get(<<"name">>, maps:get(<<"data">>, U1))),
     ?assertEqual(10, maps:get(<<"age">>, maps:get(<<"data">>, U1))),
 
@@ -182,8 +196,10 @@ delete(Path) ->
         httpc:request(delete, {URL, []}, [], [{body_format, binary}]),
     {Status, decode_body(Status, RespBody)}.
 
-decode_body(204, _) -> #{};
-decode_body(_, <<>>) -> #{};
+decode_body(204, _) ->
+    #{};
+decode_body(_, <<>>) ->
+    #{};
 decode_body(_, Body) ->
     {ok, Decoded} = thoas:decode(Body),
     Decoded.

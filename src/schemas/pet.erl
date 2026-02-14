@@ -17,6 +17,8 @@ fields() ->
         #kura_field{name = breed, type = string},
         #kura_field{name = age, type = integer},
         #kura_field{name = weight, type = float},
+        #kura_field{name = microchip_id, type = string},
+        #kura_field{name = color, type = string},
         #kura_field{name = inserted_at, type = utc_datetime},
         #kura_field{name = updated_at, type = utc_datetime}
     ].
