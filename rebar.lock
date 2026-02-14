@@ -6,7 +6,7 @@
  {<<"jhn_stdlib">>,{pkg,<<"jhn_stdlib">>,<<"5.4.0">>},1},
  {<<"kura">>,
   {git,"https://github.com/Taure/kura.git",
-       {ref,"548cc8d6cf37048ec09780b9534d06fc01acd4c9"}},
+       {ref,"17b8a752f39ee5093d4d1879222a4a506e17a4ed"}},
   0},
  {<<"nova">>,{pkg,<<"nova">>,<<"0.13.1">>},0},
  {<<"opentelemetry_api">>,{pkg,<<"opentelemetry_api">>,<<"1.5.0">>},2},
