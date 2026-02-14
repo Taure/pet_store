@@ -1,0 +1,14 @@
+{application, pet_store, [
+    {description, "Pet Store - Nova + Kura demo"},
+    {vsn, "0.1.0"},
+    {registered, []},
+    {mod, {pet_store_app, []}},
+    {applications, [
+        kernel,
+        stdlib,
+        nova,
+        kura
+    ]},
+    {env, []},
+    {modules, []}
+]}.
