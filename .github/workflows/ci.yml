@@ -50,5 +50,14 @@ jobs:
       - name: Compile
         run: rebar3 compile
 
+      - name: Check formatting
+        run: rebar3 fmt --check
+
+      - name: Xref
+        run: rebar3 xref
+
+      - name: Dialyzer
+        run: rebar3 dialyzer
+
       - name: Common Test
         run: rebar3 ct --sys_config config/test_sys.config
