@@ -64,9 +64,18 @@ create_table_migration(_Config) ->
 
     %% Verify table exists with expected columns
     Columns = get_columns(<<"pets">>),
-    ExpectedCols = [<<"id">>, <<"name">>, <<"species">>, <<"breed">>,
-                    <<"age">>, <<"weight">>, <<"inserted_at">>, <<"updated_at">>,
-                    <<"microchip_id">>],
+    ExpectedCols = [
+        <<"id">>,
+        <<"name">>,
+        <<"species">>,
+        <<"breed">>,
+        <<"age">>,
+        <<"weight">>,
+        <<"inserted_at">>,
+        <<"updated_at">>,
+        <<"microchip_id">>,
+        <<"color">>
+    ],
     [?assert(lists:member(C, Columns)) || C <- ExpectedCols],
 
     %% Verify column types
@@ -97,9 +106,12 @@ alter_table_preserves_data(_Config) ->
 
     %% Insert a pet using raw SQL (before second migration adds microchip_id)
     pet_store_repo:query(
-        <<"INSERT INTO pets (name, species, breed, age, weight, inserted_at, updated_at) "
-          "VALUES ($1, $2, $3, $4, $5, now(), now())">>,
-        [<<"Bella">>, <<"dog">>, <<"Golden Retriever">>, 4, 28.5]),
+        <<
+            "INSERT INTO pets (name, species, breed, age, weight, inserted_at, updated_at) "
+            "VALUES ($1, $2, $3, $4, $5, now(), now())"
+        >>,
+        [<<"Bella">>, <<"dog">>, <<"Golden Retriever">>, 4, 28.5]
+    ),
 
     %% Verify the pet exists
     {ok, [Pet1]} = pet_store_repo:query(<<"SELECT * FROM pets WHERE name = $1">>, [<<"Bella">>]),
@@ -119,21 +131,25 @@ alter_table_preserves_data(_Config) ->
     SQL1 = kura_migrator:compile_operation(hd(m20250214120000_create_pets:up())),
     pet_store_repo:query(SQL1, []),
     pet_store_repo:query(
-        <<"INSERT INTO schema_migrations (version) VALUES ($1)">>, [20250214120000]),
+        <<"INSERT INTO schema_migrations (version) VALUES ($1)">>, [20250214120000]
+    ),
 
     %% Insert a pet before the alter
     pet_store_repo:query(
-        <<"INSERT INTO pets (name, species, breed, age, weight, inserted_at, updated_at) "
-          "VALUES ($1, $2, $3, $4, $5, now(), now())">>,
-        [<<"Bella">>, <<"dog">>, <<"Golden Retriever">>, 4, 28.5]),
+        <<
+            "INSERT INTO pets (name, species, breed, age, weight, inserted_at, updated_at) "
+            "VALUES ($1, $2, $3, $4, $5, now(), now())"
+        >>,
+        [<<"Bella">>, <<"dog">>, <<"Golden Retriever">>, 4, 28.5]
+    ),
 
     %% Verify no microchip_id column yet
     ColumnsBefore = get_columns(<<"pets">>),
     ?assertNot(lists:member(<<"microchip_id">>, ColumnsBefore)),
 
-    %% Run migrate — should apply only the second migration (add_column)
+    %% Run migrate — should apply remaining migrations
     {ok, Applied} = kura_migrator:migrate(pet_store_repo),
-    ?assertEqual([20250214130000], Applied),
+    ?assert(lists:member(20250214130000, Applied)),
 
     %% Verify the new column exists
     ColumnsAfter = get_columns(<<"pets">>),
@@ -149,12 +165,12 @@ alter_table_preserves_data(_Config) ->
     ?assertEqual(null, maps:get(microchip_id, Pet2)).
 
 rollback_add_column(_Config) ->
-    %% Run all migrations, then rollback one step
+    %% Run all migrations, then rollback to undo add_microchip migration
     {ok, _} = kura_migrator:migrate(pet_store_repo),
-    {ok, RolledBack} = kura_migrator:rollback(pet_store_repo),
-    ?assert(lists:member(20250214130000, RolledBack)),
+    %% Rollback until microchip_id is gone (may need multiple rollbacks
+    %% if auto-generated migrations come after add_microchip)
+    rollback_until_column_gone(<<"pets">>, <<"microchip_id">>),
 
-    %% microchip_id column should be gone
     Columns = get_columns(<<"pets">>),
     ?assertNot(lists:member(<<"microchip_id">>, Columns)),
 
@@ -165,8 +181,7 @@ rollback_add_column(_Config) ->
 rollback_create_table(_Config) ->
     %% Run all, rollback everything
     {ok, _} = kura_migrator:migrate(pet_store_repo),
-    {ok, _} = kura_migrator:rollback(pet_store_repo),
-    {ok, _} = kura_migrator:rollback(pet_store_repo),
+    rollback_all(),
 
     %% The pets table should be gone
     ?assertNot(table_exists(<<"pets">>)).
@@ -202,7 +217,8 @@ status_tracks_applied(_Config) ->
 %%--------------------------------------------------------------------
 
 get_columns(Table) ->
-    SQL = <<"SELECT column_name FROM information_schema.columns WHERE table_name = $1 ORDER BY ordinal_position">>,
+    SQL =
+        <<"SELECT column_name FROM information_schema.columns WHERE table_name = $1 ORDER BY ordinal_position">>,
     case pet_store_repo:query(SQL, [Table]) of
         {ok, Rows} ->
             [maps:get(column_name, R) || R <- Rows];
@@ -211,12 +227,14 @@ get_columns(Table) ->
     end.
 
 get_column_type(Table, Column) ->
-    SQL = <<"SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2">>,
+    SQL =
+        <<"SELECT data_type FROM information_schema.columns WHERE table_name = $1 AND column_name = $2">>,
     {ok, [Row]} = pet_store_repo:query(SQL, [Table, Column]),
     maps:get(data_type, Row).
 
 get_nullable(Table, Column) ->
-    SQL = <<"SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2">>,
+    SQL =
+        <<"SELECT is_nullable FROM information_schema.columns WHERE table_name = $1 AND column_name = $2">>,
     {ok, [Row]} = pet_store_repo:query(SQL, [Table, Column]),
     maps:get(is_nullable, Row).
 
@@ -232,3 +250,19 @@ table_exists(Table) ->
 reset_database() ->
     pet_store_repo:query(<<"DROP TABLE IF EXISTS pets CASCADE">>, []),
     pet_store_repo:query(<<"DROP TABLE IF EXISTS schema_migrations CASCADE">>, []).
+
+rollback_all() ->
+    case kura_migrator:rollback(pet_store_repo) of
+        {ok, []} -> ok;
+        {ok, _} -> rollback_all();
+        {error, _} -> ok
+    end.
+
+rollback_until_column_gone(Table, Column) ->
+    case lists:member(Column, get_columns(Table)) of
+        false ->
+            ok;
+        true ->
+            {ok, _} = kura_migrator:rollback(pet_store_repo),
+            rollback_until_column_gone(Table, Column)
+    end.
