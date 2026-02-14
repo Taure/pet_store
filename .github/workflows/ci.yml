@@ -43,12 +43,12 @@ jobs:
           path: |
             _build
             ~/.cache/rebar3
-          key: ${{ runner.os }}-rebar3-${{ matrix.otp }}-${{ hashFiles('rebar.lock') }}
+          key: ${{ runner.os }}-rebar3-${{ matrix.otp }}-${{ hashFiles('rebar.config') }}
           restore-keys: |
             ${{ runner.os }}-rebar3-${{ matrix.otp }}-
 
       - name: Compile
-        run: rebar3 compile
+        run: rebar3 upgrade && rebar3 compile
 
       - name: Common Test
         run: rebar3 ct --sys_config config/test_sys.config
