@@ -34,9 +34,10 @@ pet_store/
 │   ├── pet_store_sup.erl        # Supervisor
 │   ├── pet_store_repo.erl       # Kura repo wrapper
 │   └── pet_store_router.erl     # Nova routes
-├── migrations/
-│   ├── m20250214120000_create_pets.erl
-│   └── m20250214130000_add_microchip_to_pets.erl
+├── src/
+│   ├── migrations/
+│   │   ├── m20250214120000_create_pets.erl
+│   │   └── m20250214130000_add_microchip_to_pets.erl
 ├── config/
 │   ├── dev_sys.config
 │   └── test_sys.config
