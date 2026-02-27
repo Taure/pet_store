@@ -1,0 +1,18 @@
+-module(pet_store_user_token).
+-behaviour(kura_schema).
+-include_lib("kura/include/kura.hrl").
+
+-export([table/0, fields/0, associations/0]).
+
+table() -> <<"user_tokens">>.
+
+fields() ->
+    [#kura_field{name = id, type = id, primary_key = true, nullable = false},
+     #kura_field{name = user_id, type = integer, nullable = false},
+     #kura_field{name = token, type = string, nullable = false},
+     #kura_field{name = context, type = string, nullable = false},
+     #kura_field{name = inserted_at, type = utc_datetime}].
+
+associations() ->
+    [#kura_assoc{name = user, type = belongs_to, schema = pet_store_user,
+                 foreign_key = user_id}].
