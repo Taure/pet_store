@@ -39,7 +39,7 @@ render(Bindings) ->
     </head>
     <body>
         <nav>
-            <h1><a href="/pets" style="color: white; text-decoration: none;">Pet Store</a></h1>
+            <h1><a href="/" style="color: white; text-decoration: none;">Pet Store</a></h1>
             {arizona_template:render_slot(nav_links(CurrentUser))}
         </nav>
         <main>

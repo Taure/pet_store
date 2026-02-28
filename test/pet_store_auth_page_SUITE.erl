@@ -72,7 +72,7 @@ register_valid(_Config) ->
         ),
     ?assertEqual(302, Status),
     Location = proplists:get_value("location", Headers),
-    ?assertEqual("/pets", Location).
+    ?assertEqual("/", Location).
 
 register_invalid(_Config) ->
     FormBody = "email=bad&password=short&password_confirmation=nope",
@@ -98,7 +98,7 @@ login_valid(_Config) ->
         ),
     ?assertEqual(302, Status),
     Location = proplists:get_value("location", Headers),
-    ?assertEqual("/pets", Location).
+    ?assertEqual("/", Location).
 
 login_invalid(_Config) ->
     FormBody = "email=nobody%40example.com&password=wrongpassword1",
@@ -123,7 +123,7 @@ logout(_Config) ->
         ),
     ?assertEqual(302, Status),
     Location = proplists:get_value("location", Headers),
-    ?assertEqual("/pets", Location).
+    ?assertEqual("/", Location).
 
 create_pet_logged_in(_Config) ->
     Cookie = register_and_get_cookie(),
@@ -142,7 +142,7 @@ create_pet_logged_in(_Config) ->
         ),
     ?assertEqual(302, Status),
     Location = proplists:get_value("location", Headers),
-    ?assertEqual("/pets", Location).
+    ?assertEqual("/", Location).
 
 create_pet_not_logged_in(_Config) ->
     FormBody = "name=Luna&species=cat",

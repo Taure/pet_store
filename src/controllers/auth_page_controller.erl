@@ -17,7 +17,7 @@ register(Req) ->
         {ok, User} ->
             {ok, Token} = pet_store_accounts:generate_session_token(User),
             Req1 = cowboy_req:set_resp_cookie(?COOKIE_NAME, Token, Req, ?COOKIE_OPTS),
-            {redirect, "/pets", Req1};
+            {redirect, "/", Req1};
         {error, #kura_changeset{} = CS} ->
             Errors = pet_store_accounts:format_errors(CS),
             render_view(register_view, #{errors => Errors}, Req)
@@ -35,7 +35,7 @@ login(Req) ->
         {ok, User} ->
             {ok, Token} = pet_store_accounts:generate_session_token(User),
             Req1 = cowboy_req:set_resp_cookie(?COOKIE_NAME, Token, Req, ?COOKIE_OPTS),
-            {redirect, "/pets", Req1};
+            {redirect, "/", Req1};
         {error, _} ->
             render_view(login_view, #{error => <<"Invalid email or password">>}, Req)
     end.
@@ -48,7 +48,7 @@ logout(Req) ->
             ok
     end,
     Req1 = cowboy_req:set_resp_cookie(?COOKIE_NAME, <<>>, Req, #{path => <<"/">>, max_age => 0}),
-    {redirect, "/pets", Req1}.
+    {redirect, "/", Req1}.
 
 %%----------------------------------------------------------------------
 %% Internal

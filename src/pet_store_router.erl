@@ -9,7 +9,7 @@ routes(_Environment) ->
             prefix => "",
             security => false,
             routes => [
-                {"/pets", fun pets_page_controller:index/1, #{methods => [get]}},
+                {"/", fun pets_page_controller:index/1, #{methods => [get]}},
                 {"/pets/create", fun pets_page_controller:create/1, #{methods => [post]}},
                 {"/register", fun auth_page_controller:register_page/1, #{methods => [get]}},
                 {"/register", fun auth_page_controller:register/1, #{methods => [post]}},
