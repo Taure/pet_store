@@ -10,6 +10,7 @@ table() -> <<"pets">>.
 fields() ->
     [
         #kura_field{name = id, type = id, primary_key = true, nullable = false},
+        #kura_field{name = user_id, type = integer, nullable = false},
         #kura_field{name = name, type = string, nullable = false},
         #kura_field{name = species, type = string, nullable = false},
         #kura_field{name = breed, type = string},

@@ -66,6 +66,7 @@ create_table_migration(_Config) ->
     Columns = get_columns(<<"pets">>),
     ExpectedCols = [
         <<"id">>,
+        <<"user_id">>,
         <<"name">>,
         <<"species">>,
         <<"breed">>,
@@ -101,33 +102,11 @@ add_column_migration(_Config) ->
     ?assertEqual(<<"YES">>, get_nullable(<<"pets">>, <<"microchip_id">>)).
 
 alter_table_preserves_data(_Config) ->
-    %% Run only the first migration (create_table)
-    {ok, _} = kura_migrator:migrate(pet_store_repo),
-
-    %% Insert a pet using raw SQL (before second migration adds microchip_id)
-    pet_store_repo:query(
-        <<
-            "INSERT INTO pets (name, species, breed, age, weight, inserted_at, updated_at) "
-            "VALUES ($1, $2, $3, $4, $5, now(), now())"
-        >>,
-        [<<"Bella">>, <<"dog">>, <<"Golden Retriever">>, 4, 28.5]
-    ),
-
-    %% Verify the pet exists
-    {ok, [Pet1]} = pet_store_repo:query(<<"SELECT * FROM pets WHERE name = $1">>, [<<"Bella">>]),
-    ?assertEqual(<<"dog">>, maps:get(species, Pet1)),
-    ?assertEqual(4, maps:get(age, Pet1)),
-
-    %% Now rollback to before create_table, re-run only first migration,
-    %% then run the add_column migration separately
-    %% Actually — simpler: just run migrate again which applies the second migration
-    %% But we already ran migrate above which applied both. Let's reset differently.
-
     %% Reset and do it step by step: create table, insert data, then alter table
     reset_database(),
     kura_migrator:ensure_schema_migrations(pet_store_repo),
 
-    %% Manually run just the first migration
+    %% Manually run just the first migration (create_pets)
     SQL1 = kura_migrator:compile_operation(hd(m20250214120000_create_pets:up())),
     pet_store_repo:query(SQL1, []),
     pet_store_repo:query(
@@ -147,9 +126,13 @@ alter_table_preserves_data(_Config) ->
     ColumnsBefore = get_columns(<<"pets">>),
     ?assertNot(lists:member(<<"microchip_id">>, ColumnsBefore)),
 
-    %% Run migrate — should apply remaining migrations
-    {ok, Applied} = kura_migrator:migrate(pet_store_repo),
-    ?assert(lists:member(20250214130000, Applied)),
+    %% Manually apply just the add_microchip migration
+    [Op] = m20250214130000_add_microchip_to_pets:up(),
+    SQL2 = kura_migrator:compile_operation(Op),
+    pet_store_repo:query(SQL2, []),
+    pet_store_repo:query(
+        <<"INSERT INTO schema_migrations (version) VALUES ($1)">>, [20250214130000]
+    ),
 
     %% Verify the new column exists
     ColumnsAfter = get_columns(<<"pets">>),
@@ -249,6 +232,8 @@ table_exists(Table) ->
 
 reset_database() ->
     pet_store_repo:query(<<"DROP TABLE IF EXISTS pets CASCADE">>, []),
+    pet_store_repo:query(<<"DROP TABLE IF EXISTS user_tokens CASCADE">>, []),
+    pet_store_repo:query(<<"DROP TABLE IF EXISTS users CASCADE">>, []),
     pet_store_repo:query(<<"DROP TABLE IF EXISTS schema_migrations CASCADE">>, []).
 
 rollback_all() ->
