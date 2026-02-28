@@ -185,19 +185,12 @@ status_tracks_applied(_Config) ->
 %% Migration helpers (bypass pgo advisory lock bug)
 %%--------------------------------------------------------------------
 
-migration_modules() ->
-    [
-        {20250214120000, m20250214120000_create_pets},
-        {20250214130000, m20250214130000_add_microchip_to_pets},
-        {20260214153827, m20260214153827_alter_pets},
-        {20260224213202, m20260224213202_create_auth_tables},
-        {20260228000000, m20260228000000_add_user_id_to_pets}
-    ].
+discover_migrations() ->
+    [{V, M} || {V, M, _S} <- kura_migrator:status(pet_store_repo)].
 
 apply_all_migrations() ->
     kura_migrator:ensure_schema_migrations(pet_store_repo),
-    Applied = get_applied_versions(),
-    Pending = [{V, M} || {V, M} <- migration_modules(), not lists:member(V, Applied)],
+    Pending = [{V, M} || {V, M, S} <- kura_migrator:status(pet_store_repo), S =:= pending],
     lists:foreach(
         fun({Version, Module}) ->
             Ops = Module:up(),
@@ -223,19 +216,27 @@ rollback_one() ->
             {ok, []};
         _ ->
             Version = lists:max(Applied),
-            {_, Module} = lists:keyfind(Version, 1, migration_modules()),
-            Ops = Module:down(),
-            lists:foreach(
-                fun(Op) ->
-                    SQL = kura_migrator:compile_operation(Op),
-                    pet_store_repo:query(SQL, [])
-                end,
-                Ops
-            ),
-            pet_store_repo:query(
-                <<"DELETE FROM schema_migrations WHERE version = $1">>, [Version]
-            ),
-            {ok, [Version]}
+            Migrations = discover_migrations(),
+            case lists:keyfind(Version, 1, Migrations) of
+                {_, Module} ->
+                    Ops = Module:down(),
+                    lists:foreach(
+                        fun(Op) ->
+                            SQL = kura_migrator:compile_operation(Op),
+                            pet_store_repo:query(SQL, [])
+                        end,
+                        Ops
+                    ),
+                    pet_store_repo:query(
+                        <<"DELETE FROM schema_migrations WHERE version = $1">>, [Version]
+                    ),
+                    {ok, [Version]};
+                false ->
+                    pet_store_repo:query(
+                        <<"DELETE FROM schema_migrations WHERE version = $1">>, [Version]
+                    ),
+                    {ok, [Version]}
+            end
     end.
 
 rollback_all() ->
