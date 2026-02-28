@@ -18,20 +18,23 @@ show(#{bindings := #{<<"id">> := IdBin}} = _Req) ->
             {status, 404, #{}, #{error => <<"Pet not found">>}}
     end.
 
-create(#{json := Params} = _Req) ->
+create(#{json := Params} = Req) ->
+    #{id := UserId} = maps:get(auth_data, Req),
     CS = kura_changeset:cast(pet, #{}, Params, [name, species, breed, age, weight]),
     CS1 = kura_changeset:validate_required(CS, [name, species]),
-    case pet_store_repo:insert(CS1) of
+    CS2 = kura_changeset:put_change(CS1, user_id, UserId),
+    case pet_store_repo:insert(CS2) of
         {ok, Pet} ->
             {status, 201, #{}, #{data => serialize(Pet)}};
         {error, #kura_changeset{errors = Errors}} ->
             {status, 422, #{}, #{errors => format_errors(Errors)}}
     end.
 
-update(#{bindings := #{<<"id">> := IdBin}, json := Params} = _Req) ->
+update(#{bindings := #{<<"id">> := IdBin}, json := Params} = Req) ->
+    #{id := UserId} = maps:get(auth_data, Req),
     Id = binary_to_integer(IdBin),
     case pet_store_repo:get(pet, Id) of
-        {ok, Existing} ->
+        {ok, #{user_id := UserId} = Existing} ->
             CS = kura_changeset:cast(pet, Existing, Params, [name, species, breed, age, weight]),
             case pet_store_repo:update(CS) of
                 {ok, Updated} ->
@@ -39,17 +42,22 @@ update(#{bindings := #{<<"id">> := IdBin}, json := Params} = _Req) ->
                 {error, #kura_changeset{errors = Errors}} ->
                     {status, 422, #{}, #{errors => format_errors(Errors)}}
             end;
+        {ok, _NotOwned} ->
+            {status, 403, #{}, #{error => <<"Forbidden">>}};
         {error, not_found} ->
             {status, 404, #{}, #{error => <<"Pet not found">>}}
     end.
 
-delete(#{bindings := #{<<"id">> := IdBin}} = _Req) ->
+delete(#{bindings := #{<<"id">> := IdBin}} = Req) ->
+    #{id := UserId} = maps:get(auth_data, Req),
     Id = binary_to_integer(IdBin),
     case pet_store_repo:get(pet, Id) of
-        {ok, Existing} ->
+        {ok, #{user_id := UserId} = Existing} ->
             CS = kura_changeset:cast(pet, Existing, #{}, []),
             {ok, _} = pet_store_repo:delete(CS),
             {status, 204};
+        {ok, _NotOwned} ->
+            {status, 403, #{}, #{error => <<"Forbidden">>}};
         {error, not_found} ->
             {status, 404, #{}, #{error => <<"Pet not found">>}}
     end.
@@ -59,6 +67,7 @@ delete(#{bindings := #{<<"id">> := IdBin}} = _Req) ->
 serialize(Pet) ->
     #{
         id => maps:get(id, Pet),
+        user_id => maps:get(user_id, Pet),
         name => maps:get(name, Pet),
         species => maps:get(species, Pet),
         breed => maps:get(breed, Pet, null),

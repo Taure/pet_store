@@ -16,12 +16,13 @@ create(Req) ->
     case pet_store_auth:get_current_user(Req) of
         undefined ->
             {redirect, "/login"};
-        _User ->
+        #{id := UserId} = _User ->
             {ok, FormData, _Req1} = cowboy_req:read_urlencoded_body(Req),
             Params = maps:from_list([{K, V} || {K, V} <- FormData]),
             CS = kura_changeset:cast(pet, #{}, Params, [name, species, breed, age, weight]),
             CS1 = kura_changeset:validate_required(CS, [name, species]),
-            case pet_store_repo:insert(CS1) of
+            CS2 = kura_changeset:put_change(CS1, user_id, UserId),
+            case pet_store_repo:insert(CS2) of
                 {ok, _Pet} ->
                     {redirect, "/pets"};
                 {error, #kura_changeset{}} ->
