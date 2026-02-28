@@ -11,6 +11,7 @@
     insert/1,
     update/1,
     delete/1,
+    delete_all/1,
     transaction/1,
     query/2
 ]).
@@ -35,5 +36,6 @@ one(Q) -> kura_repo_worker:one(?MODULE, Q).
 insert(CS) -> kura_repo_worker:insert(?MODULE, CS).
 update(CS) -> kura_repo_worker:update(?MODULE, CS).
 delete(CS) -> kura_repo_worker:delete(?MODULE, CS).
+delete_all(Q) -> kura_repo_worker:delete_all(?MODULE, Q).
 transaction(Fun) -> kura_repo_worker:transaction(?MODULE, Fun).
 query(SQL, Params) -> kura_repo_worker:query(?MODULE, SQL, Params).
