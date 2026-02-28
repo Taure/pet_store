@@ -111,7 +111,7 @@ delete_session_token(SessionToken) ->
             ),
             {context, <<"session">>}
         ),
-        pet_store_repo:delete_all(Q),
+        _ = pet_store_repo:delete_all(Q),
         ok
     catch
         _:_ -> ok
@@ -119,7 +119,7 @@ delete_session_token(SessionToken) ->
 
 delete_all_user_tokens(UserId) ->
     Q = kura_query:where(kura_query:from(pet_store_user_token), {user_id, UserId}),
-    pet_store_repo:delete_all(Q),
+    _ = pet_store_repo:delete_all(Q),
     ok.
 
 %%----------------------------------------------------------------------
@@ -189,7 +189,7 @@ verify_password(Password, HashedPassword) ->
 
 dummy_verify() ->
     {ok, Salt} = bcrypt:gen_salt(),
-    bcrypt:hashpw("dummy", Salt),
+    _ = bcrypt:hashpw("dummy", Salt),
     false.
 
 token_valid(InsertedAt) ->
