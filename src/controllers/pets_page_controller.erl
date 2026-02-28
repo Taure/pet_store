@@ -24,8 +24,8 @@ create(Req) ->
             CS2 = kura_changeset:put_change(CS1, user_id, UserId),
             case pet_store_repo:insert(CS2) of
                 {ok, _Pet} ->
-                    {redirect, "/pets"};
+                    {redirect, "/"};
                 {error, #kura_changeset{}} ->
-                    {redirect, "/pets"}
+                    {redirect, "/"}
             end
     end.
