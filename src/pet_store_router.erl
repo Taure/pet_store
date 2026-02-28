@@ -27,7 +27,7 @@ routes(_Environment) ->
             routes => [
                 {"/pets", fun pets_controller:index/1, #{methods => [get]}},
                 {"/pets/:id", fun pets_controller:show/1, #{methods => [get]}},
-                {"/docs", "openapi"}
+                {"/docs/[...]", "openapi"}
             ]
         },
         #{
