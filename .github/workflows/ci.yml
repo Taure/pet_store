@@ -8,56 +8,12 @@ on:
 
 jobs:
   ci:
-    runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        otp: ['28']
-
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: pet_store_test
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{ matrix.otp }}
-          rebar3-version: '3.24'
-
-      - name: Restore rebar3 cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            _build
-            ~/.cache/rebar3
-          key: ${{ runner.os }}-rebar3-${{ matrix.otp }}-${{ hashFiles('rebar.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-rebar3-${{ matrix.otp }}-
-
-      - name: Compile
-        run: rebar3 compile
-
-      - name: Check formatting
-        run: rebar3 fmt --check
-
-      - name: Xref
-        run: rebar3 xref
-
-      - name: Dialyzer
-        run: rebar3 dialyzer
-
-      - name: Common Test
-        run: rebar3 ct --sys_config config/test_sys.config
+    uses: Taure/erlang-ci/.github/workflows/ci.yml@v1
+    with:
+      otp-version: '28'
+      enable-eunit: false
+      enable-ct: true
+      ct-config: 'config/test_sys.config'
+      postgres: true
+      postgres-version: '17'
+      postgres-db: 'pet_store_test'
