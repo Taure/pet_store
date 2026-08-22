@@ -6,19 +6,6 @@
 routes(_Environment) ->
     [
         #{
-            prefix => "",
-            security => false,
-            routes => [
-                {"/", fun pets_page_controller:index/1, #{methods => [get]}},
-                {"/pets/create", fun pets_page_controller:create/1, #{methods => [post]}},
-                {"/register", fun auth_page_controller:register_page/1, #{methods => [get]}},
-                {"/register", fun auth_page_controller:register/1, #{methods => [post]}},
-                {"/login", fun auth_page_controller:login_page/1, #{methods => [get]}},
-                {"/login", fun auth_page_controller:login/1, #{methods => [post]}},
-                {"/logout", fun auth_page_controller:logout/1, #{methods => [post]}}
-            ]
-        },
-        #{
             prefix => "/api",
             security => false,
             plugins => [

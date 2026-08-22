@@ -47,8 +47,6 @@ pet_store/
 │   │   └── pet_store_user_token.erl   # Session token schema
 │   ├── controllers/
 │   │   ├── pets_controller.erl        # Pet API CRUD (with ownership)
-│   │   ├── pets_page_controller.erl   # Pet HTML pages
-│   │   ├── auth_page_controller.erl   # Auth HTML pages
 │   │   └── pet_store_*_controller.erl # User/session API controllers
 │   ├── migrations/                    # Versioned DDL migrations
 │   ├── pet_store_app.erl             # Application start
