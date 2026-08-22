@@ -8,7 +8,6 @@
         stdlib,
         nova,
         kura,
-        arizona_core,
         bcrypt
     ]},
     {env, []},
