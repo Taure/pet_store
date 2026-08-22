@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   ci:
     uses: Taure/erlang-ci/.github/workflows/ci.yml@v1
@@ -14,6 +18,4 @@ jobs:
       enable-eunit: false
       enable-ct: true
       ct-config: 'config/test_sys.config'
-      postgres: true
-      postgres-version: '17'
-      postgres-db: 'pet_store_test'
+      extra-services-compose: 'docker-compose.ci.yml'
